@@ -58,10 +58,14 @@ class _OrionChatState extends State<OrionChat> {
 
   Future<void> _generateSharedSecret() async {
       final localKeyPair = await algorithm.newKeyPair();
+      // In a real app, you'd get the remote public key from the other user.
+      // For this example, we'll generate it locally.
       final remoteKeyPair = await algorithm.newKeyPair(); 
+      final remotePublicKey = await remoteKeyPair.extractPublicKey();
+
       _sharedSecretKey = await algorithm.sharedSecretKey(
-        localPrivateKey: localKeyPair,
-        remotePublicKey: remoteKeyPair.publicKey,
+        keyPair: localKeyPair,
+        remotePublicKey: remotePublicKey,
       );
   }
 
