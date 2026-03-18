@@ -1,0 +1,11 @@
+name: orion_chat
+dependencies:
+  flutter:
+    sdk: flutter
+  cryptography: ^2.0.0
+  web_socket_channel: ^2.2.0
+  http: ^0.13.5
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/logo.png
