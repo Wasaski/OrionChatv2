@@ -1,4 +1,6 @@
 name: orion_chat
+environment:
+  sdk: '^3.9.0'
 dependencies:
   flutter:
     sdk: flutter

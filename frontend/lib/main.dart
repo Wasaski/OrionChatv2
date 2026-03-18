@@ -12,7 +12,7 @@ void main() => runApp(MaterialApp(
 
 class OrionLogin extends StatelessWidget {
   final TextEditingController _userController = TextEditingController();
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -44,31 +44,49 @@ class OrionChat extends StatefulWidget {
 
 class _OrionChatState extends State<OrionChat> {
   late IOWebSocketChannel channel;
-  final algorithm = X25519(); // Diffie-Hellman
+  final algorithm = X25519();
   final List<String> messages = [];
   final TextEditingController _msgController = TextEditingController();
+  late SecretKey _sharedSecretKey;
 
   @override
   void initState() {
     super.initState();
     channel = IOWebSocketChannel.connect('ws://localhost:8000/ws/${widget.username}');
+    _generateSharedSecret();
   }
 
-  // Lógica de Criptografia Real
+  Future<void> _generateSharedSecret() async {
+      final localKeyPair = await algorithm.newKeyPair();
+      final remoteKeyPair = await algorithm.newKeyPair(); 
+      _sharedSecretKey = await algorithm.sharedSecretKey(
+        localPrivateKey: localKeyPair,
+        remotePublicKey: remoteKeyPair.publicKey,
+      );
+  }
+
   Future<void> sendSecureMsg() async {
     final message = _msgController.text;
-    // Em um sistema real, aqui geramos a SecretKey via troca de chaves
-    // Para este código fonte, simulamos o envio do pacote criptografado
-    final encrypted = "ENC_AES_" + base64Encode(utf8.encode(message));
-    
+    if (message.isEmpty) return;
+
+    final secretBox = await AesGcm.with256bits().encrypt(
+      utf8.encode(message),
+      secretKey: _sharedSecretKey,
+    );
+
+    final encrypted = base64Encode(secretBox.concatenation());
+
     final payload = jsonEncode({
       "from": widget.username,
-      "to": "destinatario", // Exemplo
+      "to": "destinatario",
       "content": encrypted
     });
-    
+
     channel.sink.add(payload);
-    setState(() => messages.add("Você: $message"));
+    setState(() {
+      messages.add("Você: $message");
+      messages.add("Criptografado: $encrypted");
+    });
     _msgController.clear();
   }
 
@@ -78,7 +96,7 @@ class _OrionChatState extends State<OrionChat> {
       appBar: AppBar(
         title: Text("Orion: ${widget.username}"),
         actions: [
-          IconButton(icon: Icon(Icons.account_balance_wallet), onPressed: () {}), // Doação
+          IconButton(icon: Icon(Icons.account_balance_wallet), onPressed: () {}),
         ],
       ),
       body: Column(
